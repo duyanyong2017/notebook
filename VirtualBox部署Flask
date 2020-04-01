@@ -1,0 +1,36 @@
+最新的EPEL 7仓库提供python3的安装。
+执行以下命令安装EPEL仓库：
+yum install epel-release -y
+使用yum安装python3.6，安装python一般自带pip3：
+yum install python36 -y
+
+linux的软连接存放位置：
+cd /usr/bin
+查看python软连接：
+ls | grep python
+ln -s /usr/bin/python3 /usr/bin/python
+centos的yum是以来python2，把python指向python3而非python2后yum会报错：
+vim /usr/bin/yum
+修改/usr/bin/python 为/usr/bin/python2.7
+
+配置中科大yum源
+cd /etc/yum.repos.d/ 
+mv CentOS-Base.repo CentOS-Base.repo.bak 
+wget -O CentOS-Base.repo https://lug.ustc.edu.cn/wiki/_export/code/mirrors/help/centos?codeblock=3
+yum makecache
+
+安装nginx
+yum install nginx
+
+安装gunicron
+pip install gunicorn
+
+进入flask python文件所在路径，启动gunicron。需要配置virtualbox网络连接方式、关闭防火墙
+gunicorn -w4 -b 192.168.0.114:5000 run:app
+
+virtualbox设置连接方式：
+设置->网络->连接方式->桥接网卡
+
+关闭防火墙：
+systemctl stop firewalld.service #停止firewall
+systemctl disable firewalld.service #禁止firewall开机启动
