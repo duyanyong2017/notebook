@@ -1,3 +1,4 @@
+原文地址：https://ken.io/note/centos7-jenkins-install-tutorial
 一、前言
 1、 Jenkins是什么？
 Jenkins是一个开源的支持自动化构建、部署等任务的平台。基本上可以说是持续集成（CI）、持续发布（CD）不可或缺的工具。
@@ -64,3 +65,88 @@ sudo systemctl start jenkins
 #由于Jenkins不是Native Service，所以需要用chkconfig命令而不是systemctl命令
 sudo /sbin/chkconfig jenkins on
 浏览器输入 http://<ip address>:8080 访问Jenkins
+三、Nginx配置（非必要步骤）
+1、配置Nginx反向代理Jenkins
+新建配置文件
+#新增Jenkins专用Nginx配置文件
+sudo vi /etc/nginx/conf.d/jenkins.conf
+
+#输入以下内容并保存
+server {
+    listen       80;        #监听80端口
+    server_name  jenkins.ken.io; #监听的域名
+    access_log  /var/log/nginx/jenkins.access.log main;
+    error_log  /var/log/nginx/jenkins.error.log error;
+
+    location / {            #转发或处理
+        proxy_pass http://127.0.0.1:8080; 
+    }
+    error_page   500 502 503 504  /50x.html;#错误页
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+重载Nginx配置
+sudo nginx -s reload
+2、配置SELinux
+如果不配置SELinux，通过Nginx反向代理访问，可能会产如下错误
+
+#查看错误信息
+/var/log/nginx/jenkins.error.log
+
+#错误信息示例
+connect() to 127.0.0.1:8001 failed (13: Permission denied) while connecting to upstream, client: 127.0.0.1
+方法1：
+setsebool -P httpd_can_network_connect 1
+方法2:
+#关闭SELinux： 
+sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config 
+#重启：
+reboot
+修改本地hosts，将域名jenkins.ken.io指向CentOS IP,通过域名测试访问
+
+四、Jenkins初始化
+1、解锁Jenkins
+查询root账号默认密码
+
+cat /var/lib/jenkins/secrets/initialAdminPassword
+image
+输入密码并解锁
+
+2、选择插件
+image
+
+这里直接选择“安装推荐的插件”即可
+
+image
+
+选择安装的插件后会进入插件安装界面
+
+3、添加管理员
+插件安装完成后会自动进入添加管理员界面
+
+image
+
+4、配置Jenkins URL
+这里的URL指的是默认访问Jenkins的地址。
+默认是是http://:8080，如果你通过Nginx配置了域名，那么直接填写配置的域名即可。
+
+image
+
+5、开始使用Jenkins
+配置完Jenkins URL之后就完成了整个Jenkins配置引导
+
+image
+
+点击“开始使用Jenkins”就会进入Jenkins主页
+
+image
+
+搞定~
+
+五、备注
+本文参考
+https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+on+Red+Hat+distributions
+
+https://stackoverflow.com/questions/23948527/13-permission-denied-while-connecting-to-upstreamnginx?rq=1
+
