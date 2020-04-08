@@ -1,0 +1,66 @@
+一、前言
+1、 Jenkins是什么？
+Jenkins是一个开源的支持自动化构建、部署等任务的平台。基本上可以说是持续集成（CI）、持续发布（CD）不可或缺的工具。
+
+官网：https://jenkins.io/
+
+2、本篇环境信息
+工具/环境	版本
+Linux Server	CentOS 7
+Jenkins	2.121.2
+JDK	1.8.0_181
+Nginx	1.14.0
+3、准备工作
+安装JDK
+参考：https://ken.io/note/centos-java-setup
+
+将jdk1.8.0_181部署在目录/usr/java/
+部署完成后，jdk的根目录就是：/usr/java/jdk1.8.0_181/
+
+安装Nginx（非必要步骤）
+参考：https://ken.io/note/centos-quickstart-nginx-setup
+
+部署Nginx是为了方便我们通过域名访问Jenkins，如果无此需求可忽略次操作
+
+二、Jenkins安装
+1、Yum安装
+yum源导入
+#添加Yum源
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+#导入密钥
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+安装
+sudo yum install -y jenkins
+2、开放端口
+Jenkins站点的默认监听端口是8080
+
+sudo firewall-cmd --add-port=8080/tcp --permanent
+sudo firewall-cmd --reload
+3、配置Java可选路径
+因为Jenkins默认的java可选路径不包含我们部署的jdk路径，所以这里要配置一下，不然Jenkins服务会启动失败
+
+#修改jenkins启动脚本
+sudo vi /etc/init.d/jenkins
+
+#修改candidates增加java可选路径：/usr/java/jdk1.8.0_181/bin/java
+candidates="
+/etc/alternatives/java
+/usr/lib/jvm/java-1.8.0/bin/java
+/usr/lib/jvm/jre-1.8.0/bin/java
+/usr/lib/jvm/java-1.7.0/bin/java
+/usr/lib/jvm/jre-1.7.0/bin/java
+/usr/bin/java
+/usr/java/jdk1.8.0_181/bin/java
+"
+4、启动Jenkins并设置Jenkins开机启动
+#重载服务（由于前面修改了Jenkins启动脚本）
+sudo systemctl daemon-reload
+
+#启动Jenkins服务
+sudo systemctl start jenkins
+
+#将Jenkins服务设置为开机启动
+#由于Jenkins不是Native Service，所以需要用chkconfig命令而不是systemctl命令
+sudo /sbin/chkconfig jenkins on
+浏览器输入 http://<ip address>:8080 访问Jenkins
