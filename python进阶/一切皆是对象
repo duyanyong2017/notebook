@@ -1,1 +1,24 @@
+int.__class__
+Out[2]: type
 
+object.__class__
+Out[3]: type
+
+a=1
+type(a)
+Out[5]: int
+
+type(int)
+Out[6]: type
+
+type.__class__
+Out[8]: type
+
+list.__bases__
+Out[12]: (object,)
+
+a.__class__
+Out[15]: int
+
+list.__class__
+Out[16]: type
