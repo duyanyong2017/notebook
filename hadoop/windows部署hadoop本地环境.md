@@ -47,5 +47,7 @@
   在cmd窗口执行命令：hdfs namenode -format
 
 10.启动&关闭Hadoop
-     a.  进入Hadoop的sbin目录下执行start-dfs.cmd启动Hadoop     
-     b.  Web界面查看HDFS信息，在浏览器输入http://localhost:9870/，可访问NameNode
+     a.进入Hadoop的sbin目录下执行start-dfs.cmd启动Hadoop     
+     b.Web界面查看HDFS信息，在浏览器输入http://localhost:9870/，可访问NameNode
+     备注：hadoop 2.7.7访问http://localhost:50070 ，可访问NameNode，http://localhost:8088 访问yarn的web界面，有就表明已经成功。可通过jps - 查看运行的所有结点
+     c.stop-all 停止运行的所有结点
