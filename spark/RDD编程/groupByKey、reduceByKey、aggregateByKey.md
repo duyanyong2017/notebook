@@ -153,3 +153,54 @@ def reduceByKey(func: (V, V) => V): RDD[(K, V)] = self.withScope {
 ​	**reduceByKey的shuffle过程**
 
 ![image](https://upload-images.jianshu.io/upload_images/9221434-bea9f6da3a33c706.png?imageMogr2/auto-orient/strip|imageView2/2/w/429/format/webp)
+
+## aggregateByKey
+
+#### 源码
+
+~~~scala
+def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)(seqOp: (U, V) => U,
+      combOp: (U, U) => U): RDD[(K, U)] = self.withScope {
+    aggregateByKey(zeroValue, new HashPartitioner(numPartitions))(seqOp, combOp)
+  }
+~~~
+
+首先看到的是 “泛型” 声明。懂 Java 的同学直接把这个 " **[U: ClassTag]** " 理解成是一个泛型声明就好了。如果您不是很熟悉 Java 语言，那我们只需要知道这个 U 表示我们的 aggregate 方法**只能接受某一种类型的输入值**，至于到底是哪种类型，要看您在具体调用的时候给了什么类型。
+
+然后我们来看看 aggregate 的参数列表。明显这个 aggregate 方法是一个柯里化函数。柯里化的知识不在本篇文章讨论的范围之内。如果您还不了解柯里化的概念，那在这里简单地理解为是**通过多个圆括号来接受多个输入参数就可以了**。
+
+ 
+
+然后我们来看看第 1 部分，即上面蓝色加粗的 " **(zeroValue: U)** " 。这个表示它接受一个**任意类型**的输入参数，变量名为 zeroValue 。这个值就是**初值**，至于这个初值的作用，姑且不用理会，等到下一小节通过实例来讲解会更明了，在这里只需要记住它是一个 “只使用一次” 的值就好了。
+
+ 
+
+第 2 部分，我们还可以再把它拆分一下，因为它里面其实有两个参数。笔者认为 Scala 语法在定义多个参数时，辨识度比较弱，不睁大眼睛仔细看，很难确定它到底有几个参数。
+
+ 
+
+首先是第 1 个参数 " **seqOp: (U, T) => U** " 它是一个函数类型，以一个输入为任意两个类型 U, T 而输出为 U 类型的函数作为参数。这个函数会先被执行。这个参数函数的作用是为每一个分片（ slice ）中的数据遍历应用一次函数。换句话说就是假设我们的输入数据集（ RDD ）有 1 个分片，则只有一个 seqOp 函数在运行，假设有 3 个分片，则有三个 seqOp 函数在运行。可能有点难以理解，不过没关系，到后面结合实例就很容易理解了。
+
+ 
+
+另一个参数 " **combOp: (U, U) => U** " 接受的也是一个函数类型，以输入为任意类型的两个输入参数而输出为一个与输入同类型的值的函数作为参数。这个函数会在上面那个函数执行以后再执行。这个参数函数的输入数据来自于第一个参数函数的输出结果，这个函数仅会执行 1 次，它是用来最终聚合结果用的。同样这里搞不懂没关系，下一小节的实例部分保证让您明白。
+
+最后是上面这个红色加粗的 " **: U** " 它是 aggregate 方法的返回值类型，也是泛型表示。
+
+
+
+#### 说明
+
+第一个参数是， 给每一个分区中的每一种key一个初始值
+第二个是个函数， Seq Function， 这个函数就是用来先对每个分区内的数据按照 key 分别进行定义进行函数定义的操作
+第三个是个函数， Combiner Function， 对经过 Seq Function 处理过的数据按照 key 分别进行进行函数定义的操作
+
+也可以自定义分区器, 分区器有默认值
+
+#### 整个流程就是
+
+在 kv 对的 RDD 中，按 key 将 value 进行分组合并，合并时，将每个 value 和初始值作为 seq 函数的参数，进行计算，返回的结果作为一个新的 kv 对，然后再将结果按照 key 进行合并，最后将每个分组的 value 传递给 combine 函数进行计算（先将前两个 value 进行计算，将返回结果和下一个 value 传给 combine 函数，以此类推），将 key 与计算结果作为一个新的 kv 对输出 
+
+
+
+https://www.cnblogs.com/chorm590/p/spark_201904201159.html
